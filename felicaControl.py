@@ -1,37 +1,29 @@
 import nfc
 import binascii
-import tkinter as tk
-from multiprocessing import Process
-from multiprocessing import Value
+import threading
+import gui
 
-print("Stand By OK.")
+class FelicaControl():
+  def __init__(self, guiInstance) -> None:
+    self.__gui = guiInstance
+    # nfc読み込みループスレッドの定義
+    self.__nfcProcess = threading.Thread(target=self.__nfcLoop, daemon=True)
 
-def on_connect(tag, idm):
-  #print(binascii.hexlify(tag.idm).decode().upper())
-  idm = tag.idm
-  return True
+  def __onConnect(self, tag) -> bool:
+    idm = binascii.hexlify(tag.idm).decode().upper()
+    # GUI側のラベルを読み込んだIDMの値に変更
+    self.__gui.changeLabel(idm)
+    return True
 
-def nfcLoop(idm):
-  clf = nfc.ContactlessFrontend('usb')
-  while True :
-    clf.connect(rdwr={'on-connect': on_connect(idm)})
-    print(idm)
+  def __nfcLoop(self) -> None:
+    clf = nfc.ContactlessFrontend('usb')
+    while True :
+      clf.connect(rdwr={'on-connect': self.__onConnect})
 
-def informationWindow():
-  rootWindow = tk.Tk()
-  rootWindow.geometry("420x400")
-  mainFrame = tk.Frame(rootWindow)
-  mainFrame.grid()
+  def startNFCReadProcess(self) -> None:
+    print("info:NFC Read process start.")
+    self.__nfcProcess.start()
 
-  label = tk.Label(mainFrame, text="stop", font=("", "40", ""))
-  label.grid(row=0, column=0)
-  rootWindow.mainloop()
 
-if __name__ == '__main__':
-  idm = ('c', '')
-  nfcProcess = Process(target=nfcLoop, args=[idm])
-  nfcProcess.start()
-  informationWindow()
-  nfcProcess.terminate()
 
 
