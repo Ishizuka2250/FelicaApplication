@@ -8,7 +8,7 @@ class GUI:
     # 全画面表示
     self.__rootWindow.attributes("-fullscreen", True)
     # Escキーでアプリケーション終了
-    self.__rootWindow.bind("<Escape>",lambda e: self.__rootWindow.destroy())
+    self.__rootWindow.bind("<Escape>", self.__applicationTerminate)
 
     self.__mainFrame = tk.Frame(self.__rootWindow)
     self.__mainFrame.pack(expand=True, anchor=tk.CENTER)
@@ -16,6 +16,10 @@ class GUI:
     self.__label.pack(expand=True, anchor=tk.CENTER)
 
     self.__felica = fc.FelicaControl(self)
+
+  def __applicationTerminate(self, e) -> None:
+    print("info:Application terminate due to ESC Key pressed.")
+    self.__rootWindow.destroy()
 
   def run(self) -> None:
     # Felicaの読み込みループスタート
