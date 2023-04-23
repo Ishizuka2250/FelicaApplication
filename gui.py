@@ -1,5 +1,9 @@
 import tkinter as tk
+import tkinter.messagebox as msgbox
 import felicaControl as fc
+import requestServer as rs
+import sys
+import dotenv
 
 class GUI:
   def __init__(self) -> None:
@@ -15,7 +19,15 @@ class GUI:
     self.__label = tk.Label(self.__mainFrame, text="Ready.", font=("", "40", ""))
     self.__label.pack(expand=True, anchor=tk.CENTER)
 
-    self.__felica = fc.FelicaControl(self)
+    # アプリケーションモード取得
+    # ISSUE:順番待ち番号発行モード  UPDATE:順番待ち番号変更モード
+    self.__AppMode = dotenv.get_key(".env", "APP_MODE")
+    self.__request = rs.RequestServer()
+    if not self.__request.sessionCreate():
+      msgbox.showerror("error","サーバーへのログインに失敗しました.")
+      sys.exit(1)
+    
+    self.__felica = fc.FelicaControl(self, self.__request)
 
   def __applicationTerminate(self, e) -> None:
     print("info:Application terminate due to ESC Key pressed.")
@@ -27,7 +39,16 @@ class GUI:
     # メインウィンドウ表示
     self.__rootWindow.mainloop()
 
-  def changeLabel(self, text) -> None:
+  def changeLabel(self, requestResult) -> None:
+    if requestResult == 0 and self.__AppMode == "ISSUE":
+      text = "順番待ち番号の登録が完了しました."
+    elif requestResult == 0 and self.__AppMode == "UPDATE":
+      text = "カット中に更新しました."
+    elif requestResult == 4 or requestResult == 8:
+      text = "このカードは既にタッチされています."
+    else:
+      text = "エラーにより失敗しました."
+    
     # ラベルを text の値に変更
     self.__label["text"] = text
 

@@ -1,18 +1,21 @@
 import nfc
 import binascii
 import threading
-import gui
+import requestServer
 
 class FelicaControl():
-  def __init__(self, guiInstance) -> None:
+  def __init__(self, guiInstance, request) -> None:
     self.__gui = guiInstance
+    self.__request = request
     # nfc読み込みループスレッドの定義
     self.__nfcProcess = threading.Thread(target=self.__nfcLoop, daemon=True)
 
   def __onConnect(self, tag) -> bool:
     idm = binascii.hexlify(tag.idm).decode().upper()
-    # GUI側のラベルを読み込んだIDMの値に変更
-    self.__gui.changeLabel(idm)
+    # タッチしたカードのidmをサーバーへリクエスト
+    requestResult = self.__request.touchCardRequest(idm)
+    # リクエスト結果をGUI側に送信
+    self.__gui.changeLabel(requestResult)
     return True
 
   def __nfcLoop(self) -> None:
