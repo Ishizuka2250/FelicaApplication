@@ -14,8 +14,10 @@ class FelicaControl():
     idm = binascii.hexlify(tag.idm).decode().upper()
     # タッチしたカードのidmをサーバーへリクエスト
     requestResult = self.__request.touchCardRequest(idm)
-    # リクエスト結果をGUI側に送信
-    self.__gui.changeLabel(requestResult)
+    # リクエスト結果をUI側で表示
+    self.__gui.changeMessageLabel(requestResult)
+    # 5秒後にUI側のメッセージを戻す
+    self.__gui.setDefaultMessage(True)
     return True
 
   def __nfcLoop(self) -> None:

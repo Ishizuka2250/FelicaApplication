@@ -33,9 +33,9 @@ class RequestServer():
     if self.__AppMode == 'ISSUE':
       return self.__issueWaitNumber(idm)
     elif self.__AppMode == 'UPDATE':
-      return self.__cutNowWaitNumber(idm)
+      return self.__updateCutNowWaitNumber(idm)
     else:
-      return "P0101"
+      return "EP0101"
 
   def __login(self) -> bool:
     targetURL = self.__URL + "/api/v1/auth/login"
@@ -114,24 +114,23 @@ class RequestServer():
         # リクエストに失敗した場合
         print("Error:Failed to issue request.")
         print(e)
-        return "P0102"
+        return "EP0102"
       
       # APIの実行が正常に行われたか？
       if response.status_code != 201:
-        # 待ち番号の発行に失敗した場合 -> errorCode:A0301～A0306
+        # 待ち番号の発行に失敗した場合 -> errorCode:EA0301～EA0306
         print(response.json()["message"])
         return response.json()["errorcode"]
     else:
-      # Accesstokenが保存されていない場合 -> errorCode:P0202
+      # Accesstokenが保存されていない場合 -> errorCode:EP0202
       print("Error:.env file has not The AccessToken. Please try login.")
-      return "P0103"
+      return "EP0103"
     print("Info:" + response.json()["message"])
-    return ''
+    return 'IP0001'
   
-  def __cutNowWaitNumber(self, idm) -> str:
+  def __updateCutNowWaitNumber(self, idm) -> str:
     targetURL = self.__URL + "/api/v1/waiting"
     accessToken = dotenv.get_key(".env", "ACCESSTOKEN")
-    
     # .envにAccesstokenが記載されているかチェック
     if accessToken is not None and len(accessToken) > 0:
       # 待ち番号更新APIにリクエスト
@@ -149,28 +148,28 @@ class RequestServer():
       except Exception as e:
         print("Error:Failed to update (cut now state change) request.")
         print(e)
-        return "P0104"
+        return "EP0104"
       # 待ち番号の更新が正常に行われたか？
       if response.status_code != 200:
-        # 待ち番号の更新に失敗した場合 -> errorCode:A0307～A0315
+        # 待ち番号の更新に失敗した場合 -> errorCode:EA0307～EA0315
         print(response.json()["message"])
         return response.json()["errorcode"]
     else:
-      # Accesstokenが保存されていない場合 -> errorCode:P0103
+      # Accesstokenが保存されていない場合 -> errorCode:EP0103
       print("Warn:.env file has not The AccessToken. Please try login.")
-      return "P0103"
+      return "EP0103"
     print("Info:" + response.json()["message"])
-    return ''
+    return 'IP0002'
   
-  def cutDoneWaitNumber(self, waitNumber) -> int:
+  def updateCutDoneWaitNumber(self) -> str:
     targetURL = self.__URL + "/api/v1/waiting"
     accessToken = dotenv.get_key(".env", "ACCESSTOKEN")
     masterKey = dotenv.get_key(".env", "MASTER_KEY")
-    waitNumberID = self.__getWaitNumberID(waitNumber)
-    # タッチされたカード(カット中)の待ち番号が発行されていない場合 -> errorCode:P0105
+    waitNumberID = self.__getCutNowWaitNubmerID()
+    # タッチされたカード(カット中)の待ち番号が発行されていない場合 -> errorCode:EP0105
     if waitNumberID == 0:
-      print("Error:The card number touched has not been issued.")
-      return "P0105"
+      print("Error:The Cut Now Status does not exist.")
+      return "EP0105"
     updateStatus = {
       "waiting_numbers": [{
         "id": waitNumberID,
@@ -179,7 +178,6 @@ class RequestServer():
         "is_cut_call": 0,
         "is_cut_now": 0
       }]}
-    
     # .envにAccesstokenが記載されているかチェック
     if accessToken is not None and len(accessToken) > 0:
       # 待ち番号更新APIにリクエスト
@@ -198,18 +196,26 @@ class RequestServer():
       except Exception as e:
         print("Error:Failed to update (cut done state change) request.")
         print(e)
-        return "P0106"
+        return "EP0106"
       # 待ち番号の更新が正常に行われたか？
       if response.status_code != 200:
-        # 待ち番号の更新に失敗した場合 -> errorCode:A0307～A0315
+        # 待ち番号の更新に失敗した場合 -> errorCode:EA0307～EA0315
         print(response.json()["message"])
         return response.json()["errorcode"]
     else:
-      # Accesstokenが保存されていない場合 -> errorCode:P0103
+      # Accesstokenが保存されていない場合 -> errorCode:EP0103
       print("Warn:.env file has not The AccessToken. Please try login.")
-      return "P0103"
+      return "EP0103"
     print("Info:" + response.json()["message"])
-    return ''
+    return 'IP0003'
+  
+  def __getCutNowWaitNubmerID(self) -> int:
+    waitNumberDictionaries = self.getWaitNumbers()
+    # 発行された待ち番号の中から引数に指定された待ち番号を探してIDを返却
+    for waitNumberDictionary in waitNumberDictionaries:
+      if int(waitNumberDictionary["is_cut_now"]) == 1:
+        return int(waitNumberDictionary["id"])
+    return 0
 
   def __getWaitNumberID(self, waitNumber) -> int:
     waitNumberDictionaries = self.getWaitNumbers()
