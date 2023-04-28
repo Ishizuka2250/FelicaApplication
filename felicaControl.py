@@ -1,7 +1,6 @@
 import nfc
 import binascii
 import threading
-import requestServer
 
 class FelicaControl():
   def __init__(self, guiInstance, request) -> None:
