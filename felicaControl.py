@@ -20,14 +20,18 @@ class FelicaControl():
     return True
 
   def __nfcLoop(self) -> None:
-    clf = nfc.ContactlessFrontend('usb')
-    while True :
-      clf.connect(rdwr={'on-connect': self.__onConnect})
+    try:
+      # Felica端末の接続
+      clf = nfc.ContactlessFrontend('usb')
+      # Felica端末カードタッチ待ちループ
+      while True :
+        clf.connect(rdwr={"on-connect": self.__onConnect})
+    except Exception as e:
+      print("Error:Failed to read the Felica Reader.")
+      print(e)
+      self.__gui.errorExit("Felica端末の読み込みに失敗しました。")
 
   def startNFCReadProcess(self) -> None:
-    print("info:NFC Read process start.")
+    # タッチ待ちループスタート
     self.__nfcProcess.start()
-
-
-
-
+    print("info:NFC Read process start.")

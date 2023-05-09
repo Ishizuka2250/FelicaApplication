@@ -2,7 +2,6 @@ import tkinter as tk
 import tkinter.messagebox as msgbox
 import felicaControl as fc
 import requestServer as rs
-import sys
 import dotenv
 import time
 
@@ -45,8 +44,7 @@ class GUI:
     self.__footerFrame.propagate(False)
     # Serverへログイン
     if not self.__request.sessionCreate():
-      msgbox.showerror("Error","サーバーへのログインに失敗しました.")
-      sys.exit(1)
+      self.errorExit("サーバーへのログインに失敗しました.")
     self.__felica = fc.FelicaControl(self, self.__request)
 
   def run(self) -> None:
@@ -56,16 +54,22 @@ class GUI:
     self.__rootWindow.mainloop()
 
   def __applicationTerminate(self, e) -> None:
+    # ESC押された後のアプリ終了処理
     print("info:Application terminate due to ESC Key pressed.")
     self.__rootWindow.destroy()
   
+  def errorExit(self, message):
+    msgbox.showerror("Error", message)
+    self.__rootWindow.destroy()
+
   def __updateCutDoneWaitNumber(self, e) -> None:
+    # カット完了ボタン押下後の待ち状態変更処理
     self.changeMessageLabel(self.__request.updateCutDoneWaitNumber())
     self.__rootWindow.after(5000, self.setDefaultMessage)
 
   def changeMessageLabel(self, requestResult) -> None:
     if (requestResult[0] == 'E'):
-      # 顧客側の重複タッチ警告は画面に表示しない
+      # ISSUEモード時重複タッチ警告は画面に表示しない
       if requestResult == "EA0304": return
       self.__messageIcon.config(image=self.__warningImg)
     else:
