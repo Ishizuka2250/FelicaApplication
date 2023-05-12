@@ -7,7 +7,7 @@ import time
 
 class GUI:
   def __init__(self) -> None:
-    self.__request = rs.RequestServer()
+    self.__request = rs.RequestServer(self)
     # アプリケーションモード取得
     # ISSUE:順番待ち番号発行モード  UPDATE:順番待ち番号変更モード
     self.__AppMode = dotenv.get_key(".env", "APP_MODE")
@@ -58,9 +58,12 @@ class GUI:
     print("info:Application terminate due to ESC Key pressed.")
     self.__rootWindow.destroy()
   
-  def errorExit(self, message):
+  def errorExit(self, message) -> None:
     msgbox.showerror("Error", message)
     self.__rootWindow.destroy()
+  
+  def showConfirmDialog(self, title, message) -> bool:
+    return msgbox.askyesno(title, message)
 
   def __updateCutDoneWaitNumber(self, e) -> None:
     # カット完了ボタン押下後の待ち状態変更処理
