@@ -14,8 +14,8 @@ class GUI:
     # GUIの部品配置
     self.__rootWindow = tk.Tk()
     # 全画面表示
-    #self.__rootWindow.attributes("-fullscreen", True)
-    self.__rootWindow.geometry("1024x600")
+    self.__rootWindow.attributes("-fullscreen", True)
+    #self.__rootWindow.geometry("1024x600")
     # Escキーでアプリケーション終了
     self.__rootWindow.bind("<Escape>", self.__applicationTerminate)
     # Updateモードの場合Enterキーでカット中->カット完了の状態変更を実行可
@@ -67,7 +67,7 @@ class GUI:
 
   def __updateCutDoneWaitNumber(self, e) -> None:
     # カット完了ボタン押下後の待ち状態変更処理
-    self.changeMessageLabel(self.__request.updateCutDoneWaitNumber())
+    self.changeMessageLabel(self.__request.buttonRequest())
     self.__rootWindow.after(5000, self.setDefaultMessage)
 
   def changeMessageLabel(self, requestResult) -> None:

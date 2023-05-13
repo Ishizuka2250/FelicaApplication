@@ -35,8 +35,6 @@ class RequestServer():
       # アプリケーションモード取得
       # ISSUE:順番待ち番号発行モード  UPDATE:順番待ち番号変更モード REGIST:順番待ちカード登録モード
       self.__AppMode = dotenv.get_key(self.__DotEnvFilePath, "APP_MODE")
-      # 現在の店状態を取得
-      self.__CurrentShopStatus = self.getCurrentShopStatus()
     else:
       # .envファイルが存在しない場合 -> アプリケーション終了
       print("Error:Failed to read .env file.")
@@ -63,7 +61,9 @@ class RequestServer():
     else:
       return None
 
-  def touchCardRequest(self, idm: str) -> int:
+  def touchCardRequest(self, idm: str) -> str:
+    # 現在の店状態を取得
+    self.__CurrentShopStatus = self.getCurrentShopStatus()
     # 各モードでタッチ後のリクエストを切り替え
     if self.__AppMode == 'ISSUE':
       return self.__issueWaitNumber(idm)
@@ -74,6 +74,12 @@ class RequestServer():
     else:
       # ISSUE, UPDATE, REGIST以外のモードが指定された時 -> errorCode:EP0101
       return "EP0101"
+  
+  def buttonRequest(self) -> str:
+    # 現在の店状態を取得
+    self.__CurrentShopStatus = self.getCurrentShopStatus()
+    # カット中 -> カット済みへ変更
+    return self.__updateCutDoneWaitNumber()
 
   def __login(self) -> bool:
     targetURL = self.__URL + "/api/v1/auth/login"
@@ -156,6 +162,7 @@ class RequestServer():
     if self.__CurrentShopStatus != ShopStatus.OPEN:
       updateShopStatusResult = self.__updateShopStatus(ShopStatus.OPEN)
       if updateShopStatusResult[0] == 'E': return updateShopStatusResult
+      self.__CurrentShopStatus = ShopStatus.OPEN
     return 'IP0001'
   
   def __updateCutNowWaitNumber(self, idm: str) -> str:
@@ -183,12 +190,14 @@ class RequestServer():
       print(response.json()["message"])
       return response.json()["errorcode"]
     print("Info:" + response.json()["message"])
+    # 店状態がOPEN以外の場合:OPENへ変更
     if self.__CurrentShopStatus != ShopStatus.OPEN:
       updateShopStatusResult = self.__updateShopStatus(ShopStatus.OPEN)
       if updateShopStatusResult[0] == 'E': return updateShopStatusResult
+      self.__CurrentShopStatus = ShopStatus.OPEN
     return 'IP0002'
 
-  def updateCutDoneWaitNumber(self) -> str:
+  def __updateCutDoneWaitNumber(self) -> str:
     targetURL = self.__URL + "/api/v1/waiting"
     masterKey = dotenv.get_key(".env", "MASTER_KEY")
     waitNumberID = self.__getCutNowWaitNubmerID()
@@ -227,6 +236,11 @@ class RequestServer():
       # 待ち番号の更新に失敗した場合 -> errorCode:EA0307～EA0315
       print(response.json()["message"])
       return response.json()["errorcode"]
+    # 店状態がOPENの場合:BREAKへ変更
+    if self.__CurrentShopStatus != ShopStatus.BREAK:
+      updateShopStatusResult = self.__updateShopStatus(ShopStatus.BREAK)
+      if updateShopStatusResult[0] == 'E': return updateShopStatusResult
+      self.__CurrentShopStatus = ShopStatus.BREAK
     print("Info:" + response.json()["message"])
     return 'IP0003'
 
@@ -253,11 +267,11 @@ class RequestServer():
       print("Error:Failed to update (shop status change) request.")
       print(e)
       return "EP0108"
-    # 店状態の更新が正常に行われたか？
+      # 店状態の更新が正常に行われたか？
     if response.status_code != 200:
-      # 店状態の更新に失敗した場合 -> errorCode:EA0201～EA0202
-      print(response.json()["message"])
-      return response.json()["errorcode"]
+        # 店状態の更新に失敗した場合 -> errorCode:EA0201～EA0202
+        print(response.json()["message"])
+        return response.json()["errorcode"]
     print(response.json()["message"])
     self.__CurrentShopStatus = ShopStatus.getShopStatus(response.json()["changed_status"]["id"])
     return 'IP0004'
